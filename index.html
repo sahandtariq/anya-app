@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fast Food Menu</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --bg:#f3f3f3;
+    --card:#ffffff;
+    --text:#222;
+    --primary:#ffb300;
+    --active:#ff5722;
+}
+
+body.dark{
+    --bg:#1e1e1e;
+    --card:#2c2c2c;
+    --text:#f5f5f5;
+}
+
+body{
+    margin:0;
+    font-family:Inter,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    transition:.3s;
+}
+
+header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px;
+}
+
+.logo{
+    font-size:17px;
+    font-weight:600;
+}
+
+.controls{
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+
+select,button{
+    padding:6px 10px;
+    border-radius:20px;
+    border:none;
+    cursor:pointer;
+}
+
+button{
+    background:var(--primary);
+}
+
+.categories{
+    display:flex;
+    gap:20px;
+    overflow-x:auto;
+    padding:10px 15px;
+}
+
+.category{
+    text-align:center;
+    min-width:70px;
+    cursor:pointer;
+}
+
+.category div{
+    background:var(--primary);
+    width:60px;
+    height:60px;
+    border-radius:18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:28px;
+    margin:auto;
+    transition:.2s;
+}
+
+.category.active div{
+    background:var(--active);
+    color:#fff;
+    transform:scale(1.1);
+}
+
+.category.active small{
+    font-weight:600;
+}
+
+.products{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:15px;
+    padding:15px;
+}
+
+.card{
+    background:var(--card);
+    border-radius:15px;
+    padding:10px;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    cursor:pointer;
+    transition:.2s;
+}
+
+.card:hover{
+    transform:scale(1.03);
+}
+
+.card img{
+    width:100%;
+    border-radius:12px;
+    height:130px;
+    object-fit:cover;
+}
+
+.price{
+    font-weight:600;
+}
+
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+}
+
+.modal-content{
+    background:var(--card);
+    padding:20px;
+    border-radius:15px;
+    width:90%;
+    max-width:400px;
+}
+
+.modal-content img{
+    width:100%;
+    border-radius:10px;
+}
+
+.rtl{
+    direction:rtl;
+    text-align:right;
+}
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo">🍔 Anya Fast Food</div>
+    <div class="controls">
+        <select id="languageSelect">
+            <option value="en">English</option>
+            <option value="ar">العربية</option>
+            <option value="ku">کوردی</option>
+        </select>
+        <button onclick="toggleDark()">🌙</button>
+    </div>
+</header>
+
+<div class="categories">
+    <div class="category active" data-cat="popular" onclick="setCategory('popular')">
+        <div>🔥</div><small data-key="popular"></small>
+    </div>
+    <div class="category" data-cat="burger" onclick="setCategory('burger')">
+        <div>🍔</div><small data-key="burger"></small>
+    </div>
+    <div class="category" data-cat="pizza" onclick="setCategory('pizza')">
+        <div>🍕</div><small data-key="pizza"></small>
+    </div>
+    <div class="category" data-cat="fries" onclick="setCategory('fries')">
+        <div>🍟</div><small data-key="fries"></small>
+    </div>
+    <div class="category" data-cat="drinks" onclick="setCategory('drinks')">
+        <div>🥤</div><small data-key="drinks"></small>
+    </div>
+</div>
+
+<div class="products" id="products"></div>
+
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <img id="modalImg">
+        <h3 id="modalName"></h3>
+        <p id="modalDesc"></p>
+        <p class="price" id="modalPrice"></p>
+        <button onclick="closeModal()">Close</button>
+    </div>
+</div>
+
+<script>
+let currentLang="en";
+let activeCategory="popular";
+
+const translations={
+en:{
+popular:"Popular",burger:"Burger",pizza:"Pizza",fries:"Fries",drinks:"Drinks",
+items:[
+{name:"Cheese Burger",desc:"Tasty grilled beef burger with cheese.",price:"5.50 $",cat:"burger",img:"https://images.unsplash.com/photo-1550547660-d9450f859349"},
+{name:"Pepperoni Pizza",desc:"Hot pizza with pepperoni.",price:"7.00 $",cat:"pizza",img:"https://pngimg.com/d/pizza_PNG44092.png"},
+{name:"French Fries",desc:"Crispy golden fries.",price:"3.00 $",cat:"fries",img:"https://images.unsplash.com/photo-1586190848861-99aa4a171e90"},
+{name:"Cola Drink",desc:"Cold refreshing cola.",price:"2.00 $",cat:"drinks",img:"https://images.unsplash.com/photo-1581636625402-29b2a704ef13"}
+]},
+ar:{
+popular:"الأكثر طلباً",burger:"برغر",pizza:"بيتزا",fries:"بطاطا",drinks:"مشروبات",
+items:[
+{name:"برغر بالجبن",desc:"برغر لحم مشوي مع الجبن.",price:"5.50 $",cat:"burger",img:"https://images.unsplash.com/photo-1550547660-d9450f859349"},
+{name:"بيتزا بيبروني",desc:"بيتزا ساخنة بالبيبروني.",price:"7.00 $",cat:"pizza",img:"https://pngimg.com/d/pizza_PNG44092.png"},
+{name:"بطاطا مقلية",desc:"بطاطا ذهبية مقرمشة.",price:"3.00 $",cat:"fries",img:"https://images.unsplash.com/photo-1586190848861-99aa4a171e90"},
+{name:"كولا",desc:"مشروب كولا بارد.",price:"2.00 $",cat:"drinks",img:"https://images.unsplash.com/photo-1581636625402-29b2a704ef13"}
+]},
+ku:{
+popular:"زۆر داواکراو",burger:"بەرگەر",pizza:"پیتزا",fries:"پەتاتە",drinks:"خواردنەوە",
+items:[
+{name:"بەرگەر بە پەنیر",desc:"بەرگەرێکی خواردنی لەگەڵ پەنیر.",price:"5.50 $",cat:"burger",img:"https://images.unsplash.com/photo-1550547660-d9450f859349"},
+{name:"پیتزای پێپەرۆنی",desc:"پیتزای گەرم بە پێپەرۆنی.",price:"7.00 $",cat:"pizza",img:"https://pngimg.com/d/pizza_PNG44092.png"},
+{name:"پەتاتەی سوورکراو",desc:"پەتاتەی زەرد و قەورە.",price:"3.00 $",cat:"fries",img:"https://images.unsplash.com/photo-1586190848861-99aa4a171e90"},
+{name:"کۆلا",desc:"خواردنەوەی سارد.",price:"2.00 $",cat:"drinks",img:"https://images.unsplash.com/photo-1581636625402-29b2a704ef13"}
+]}
+};
+
+function loadContent(){
+const t=translations[currentLang];
+document.querySelectorAll("[data-key]").forEach(el=>el.innerText=t[el.dataset.key]);
+renderProducts();
+document.body.classList.toggle("rtl",currentLang!=="en");
+}
+
+function renderProducts(){
+const t=translations[currentLang];
+const container=document.getElementById("products");
+container.innerHTML="";
+t.items.filter(item=>activeCategory==="popular"||item.cat===activeCategory)
+.forEach(item=>{
+container.innerHTML+=`
+<div class="card" onclick='openModal(${JSON.stringify(item)})'>
+<img src="${item.img}">
+<h4>${item.name}</h4>
+<div class="price">${item.price}</div>
+</div>`;
+});
+highlightCategory();
+}
+
+function setCategory(cat){
+activeCategory=cat;
+renderProducts();
+}
+
+function highlightCategory(){
+document.querySelectorAll(".category").forEach(el=>el.classList.remove("active"));
+document.querySelector(`.category[data-cat="${activeCategory}"]`).classList.add("active");
+}
+
+function openModal(item){
+modalImg.src=item.img;
+modalName.innerText=item.name;
+modalDesc.innerText=item.desc;
+modalPrice.innerText=item.price;
+modal.style.display="flex";
+}
+
+function closeModal(){ modal.style.display="none"; }
+
+function toggleDark(){ document.body.classList.toggle("dark"); }
+
+languageSelect.onchange=e=>{ currentLang=e.target.value; loadContent(); };
+
+loadContent();
+</script>
+
+</body>
+<footer><center><p>Developed by Sahand Tariq 2026</p></center></footer>
+</html>
